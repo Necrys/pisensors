@@ -43,14 +43,13 @@ func main() {
       log.Fatal( err )
     }
 
-    url := fmt.Sprintf( "%s%s%st=%f&h=%f&p=%f", "http://", botHost, "/bme280/?", temperature, humidity, pressure )
-    resp, err := http.Get( url )
+    timestamp := time.Now().Local().Format( "02012006150405MST" )
+    url := fmt.Sprintf( "%s%s%sts=%s&t=%f&h=%f&p=%f", "http://", botHost, "/bme280/?", string( timestamp ), temperature, humidity, pressure )
+    _, err = http.Get( url )
     if err != nil {
       log.Printf( "Error sending request: %v", err )
       // Write data for debug purposes
       log.Printf( "temperature: %.2f C, humidity: %.2f RH, pressure: %.2f mmHg\n", temperature, humidity, pressure )
-    } else {
-      log.Printf( "Response Status: %v", resp.Status )
     }
 
     // TODO: add local CSV log
