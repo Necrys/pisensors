@@ -8,12 +8,37 @@ import (
   "os/signal"
   "syscall"
   "time"
+  "encoding/json"
+  "io/ioutil"
+  "errors"
   "./bme280"
 )
 
+type Config struct {
+  BotAddress string
+}
+
+func ReadConfig( cfgPath string ) ( *Config, error ) {
+  file, err := ioutil.ReadFile( cfgPath )
+  if err != nil {
+    return nil, err
+  }
+
+  var cfg Config
+  err = json.Unmarshal( file, &cfg )
+  if err != nil {
+    return nil, err
+  }
+
+  return &cfg, nil
+}
+
 func main() {
-  // TODO: make configurable
-  botHost := "0.0.0.0:8080"
+  cfg, err := ReadConfig( "config.json" )
+  if err != nil {
+    log.Fatal( err )
+    return
+  }
 
   isWorking := true
   sigs := make( chan os.Signal, 1 )
@@ -22,7 +47,7 @@ func main() {
     log.Printf( "%v\n", sig )
     isWorking = false;
   } ()
-  
+
   signal.Notify( sigs, syscall.SIGINT, syscall.SIGTERM )
 
   log.Println( "Starting..." )
@@ -35,7 +60,7 @@ func main() {
   defer bme280conn.Disconnect()
 
   log.Println( "BME280 init OK..." )
-  
+
   logPeriod := time.Duration( 1 ) * time.Minute
   for isWorking {
     temperature, humidity, pressure, err := bme280conn.ReadData()
@@ -44,7 +69,7 @@ func main() {
     }
 
     timestamp := time.Now().Local().Format( "02012006150405MST" )
-    url := fmt.Sprintf( "%s%s%sts=%s&t=%f&h=%f&p=%f", "http://", botHost, "/bme280/?", string( timestamp ), temperature, humidity, pressure )
+    url := fmt.Sprintf( "%s%s%sts=%s&t=%f&h=%f&p=%f", "http://", cfg.BotAddress, "/bme280/?", string( timestamp ), temperature, humidity, pressure )
     _, err = http.Get( url )
     if err != nil {
       log.Printf( "Error sending request: %v", err )
