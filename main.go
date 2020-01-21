@@ -10,8 +10,7 @@ import (
   "time"
   "encoding/json"
   "io/ioutil"
-  "errors"
-  "./bme280"
+  "pisensors/bme280"
 )
 
 type Config struct {
